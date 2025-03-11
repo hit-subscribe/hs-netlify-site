@@ -8,11 +8,10 @@ import remarkGfm from 'remark-gfm';
 // POSTS_PATH is useful when you want to get the path to a specific file
 export const POSTS_PATH = path.join(process.cwd(), 'posts');
 
-// postFilePaths is the list of all mdx files inside the POSTS_PATH directory
-export const postFilePaths = fs
-  .readdirSync(POSTS_PATH)
-  // Only include md(x) files
-  .filter((path) => /\.mdx?$/.test(path));
+export const postFilePaths = getFilesRecursive(POSTS_PATH)
+  .filter((filePath) => /\.mdx?$/.test(filePath))
+  .map((filePath) => path.relative(POSTS_PATH, filePath));
+
 
 export const sortPostsByDate = (posts) => {
   return posts.sort((a, b) => {
@@ -92,3 +91,17 @@ export const getPreviousPostBySlug = (slug) => {
     slug: previousPostSlug,
   };
 };
+
+function getFilesRecursive(directory) {
+  let files = [];
+  fs.readdirSync(directory, { withFileTypes: true }).forEach((dirent) => {
+    const fullPath = path.join(directory, dirent.name);
+    if (dirent.isDirectory()) {
+      files = files.concat(getFilesRecursive(fullPath));
+    } else {
+      files.push(fullPath);
+    }
+  });
+  return files;
+}
+

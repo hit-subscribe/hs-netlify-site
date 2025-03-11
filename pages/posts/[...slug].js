@@ -1,3 +1,4 @@
+import path from 'path';
 import { getGlobalData } from '../../utils/global-data';
 import {
   getNextPostBySlug,

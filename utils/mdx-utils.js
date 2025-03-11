@@ -22,21 +22,25 @@ export const sortPostsByDate = (posts) => {
 };
 
 export const getPosts = () => {
-  let posts = postFilePaths.map((filePath) => {
-    const source = fs.readFileSync(path.join(POSTS_PATH, filePath));
-    const { content, data } = matter(source);
+  let posts = postFilePaths
+    // Filter out posts in subdirectories
+    .filter((filePath) => !filePath.includes(path.sep))
+    .map((filePath) => {
+      const source = fs.readFileSync(path.join(POSTS_PATH, filePath));
+      const { content, data } = matter(source);
 
-    return {
-      content,
-      data,
-      filePath,
-    };
-  });
+      return {
+        content,
+        data,
+        filePath,
+      };
+    });
 
   posts = sortPostsByDate(posts);
 
   return posts;
 };
+
 
 export const getPostBySlug = async (slug) => {
   const postFilePath = path.join(POSTS_PATH, `${slug}.mdx`);

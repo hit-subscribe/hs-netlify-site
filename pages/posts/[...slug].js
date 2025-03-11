@@ -99,10 +99,11 @@ export default function PostPage({
 }
 
 export const getStaticProps = async ({ params }) => {
+  const slug = Array.isArray(params.slug) ? params.slug.join('/') : params.slug;
+  const { mdxSource, data } = await getPostBySlug(slug);
+  const prevPost = getPreviousPostBySlug(slug);
+  const nextPost = getNextPostBySlug(slug);
   const globalData = getGlobalData();
-  const { mdxSource, data } = await getPostBySlug(params.slug);
-  const prevPost = getPreviousPostBySlug(params.slug);
-  const nextPost = getNextPostBySlug(params.slug);
 
   return {
     props: {
@@ -114,6 +115,7 @@ export const getStaticProps = async ({ params }) => {
     },
   };
 };
+
 
 export const getStaticPaths = async () => {
   const paths = postFilePaths

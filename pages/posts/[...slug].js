@@ -118,12 +118,16 @@ export const getStaticProps = async ({ params }) => {
 export const getStaticPaths = async () => {
   const paths = postFilePaths
     // Remove file extensions for page paths
-    .map((path) => path.replace(/\.mdx?$/, ''))
+    .map((filePath) => filePath.replace(/\.mdx?$/, ''))
     // Map the path into the static paths object required by Next.js
-    .map((slug) => ({ params: { slug } }));
+    .map((slug) => {
+      const segments = slug.split(path.sep); // Use path.sep to support OS-specific separators
+      return { params: { slug: segments } };
+    });
 
   return {
     paths,
     fallback: false,
   };
 };
+

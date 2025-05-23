@@ -1,0 +1,175 @@
+---
+title: "Token Refresh: What It Is and How It Improves Security"
+description: "What is data protection technology?  Learn everything you need to know about what it is and how to adopt."
+date: March 13 2025
+---
+The OAuth Token Refresh model is one of the most popular and reliable mechanisms to tackle authentication and authorization in platforms and APIs. In this article, we'll explore what this model is and how it significantly improves the security of your platforms against breaches and exploitation. First, we'll briefly go through the basics of token-based security for APIs and platforms. Then we'll explain what a refresh token is in detail and review the differences between an access token and a refresh token. After that, we'll explain why refresh tokens are crucial to ensure token-based security protection. Finally, we'll put the knowledge to good use by showing you an example of a refresh token mechanism in Node.js that you can use and [test in your browser](https://www.tricentis.com/resources/browser-based-testing-in-neoload-with-realbrowser). Alright, let's get into it.
+
+The Basics of Token-Based Security
+----------------------------------
+
+Token-based security is founded on the principle of bearer authentication. This implies that any entity is granted access to a resource by showing ownership of a token or key provided during authorization. This means that as long as you have a token identifying you as an authorized entity and the token is valid and has not expired, you can consume the resource as much as you want. In essence, tokens are data elements that hold the minimum amount of information necessary to enable the process of determining the identity of a user and authorizing their actions. Standard identity protocols use token-based mechanisms like OAuth 2.0 to secure access to resources and applications. OAuth 2.0 is one of the most prevalent authorization frameworks available, and it uses a combination of access tokens and refresh tokens.
+
+### **What Is an Access Token?**
+
+In an OAuth 2.0–compliant server, the server issues an access token at the moment of authentication. As said previously, this token allows client applications to make secure calls to the server API by signaling that it has acquired authorization from the user to perform specific tasks or access resources on behalf of the user. Tokens have a life cycle, and for access tokens, their lifespan is usually short, between thirty minutes to a day, depending on the server's security settings. This security measure ensures that compromised tokens only provide access for a short time. So, does that mean the user must provide their credentials every time the token expires? Well, no, as long as you're implementing refresh tokens.
+
+### **What About Refresh Tokens?**
+
+As the [official](https://oauth.net/2/refresh-tokens/) OAuth 2.0 specification states, "An OAuth Refresh Token is a string that the OAuth client can use to get a new access token without the user's interaction." In other words, a refresh token is a means to renew or regain authentication status from the server without the need for credentials. This is important because you would want to reduce the friction of authentication requests that reach the user for credentials as it creates a bad user experience and hinders the overall flow of interaction.
+
+### **What's the Difference Between an Access Token and a Refresh Token?**
+
+The most crucial difference between access tokens and refresh tokens is their purpose. Even though they're similar in composition, they're used for different ends. An access token acts as a credential artifact or certificate to grant access to protected resources. As a result, malicious users could compromise a system and misappropriate access tokens. They could then use them to access protected resources. However, a refresh token does not grant access to any resource other than the mechanism to renew or generate new access tokens. As stated on the OAuth [website](https://oauth.net/2/refresh-tokens/), "A refresh token must not allow the client to gain any access beyond the scope of the original grant. The refresh token exists to enable authorization servers to use short lifetimes for access tokens without needing to involve the user when the token expires." Additionally, refresh tokens have a much longer lifespan than access tokens due to their function as the means to renew these tokens.
+
+### **What Happens When the Refresh Token Expires?**
+
+But what happens when a refresh token expires? Well, simple. The user is asked to provide credentials for authentication. From a security perspective, the primary purpose of a refresh token is to segregate the means of authentication from authorization and prevent the unnecessary exposure of the credentials that grant authentication while reducing the need to nag the user. It achieves this by serving as a sort of private key that is only exposed when needed (when the access token has expired) while staying valid for a period that the user will not feel is inconvenient to re-authenticate.
+
+Why Are Refresh Tokens Important?
+---------------------------------
+
+One of the main reasons tokens are such a robust authentication and authorization mechanism is their capacity to be expired. However, without a refresh token mechanism in place, the token model doesn't hold up. What if, for example, a bad actor misappropriates the token? They can essentially impersonate you and gain access without any authentication required, right? That would not be good. The access token has a short expiration time. In the unlikely event that an attacker gains access to a valid token, an attacker only has a small window to use it without a refresh token. Additionally, refresh tokens are less likely to be stolen since they are less exposed to exploitation. Moreover, in case of a breach, the server can invalidate refresh tokens and close the window to attacks.
+
+Refresh Token Implementation
+----------------------------
+
+Now that you have a solid understanding of the basics of token-based authentication, let's see it in action. For this, you'll need to create a simple Node.js app. I'll take notes from a previous article about token authentication, which [you can find here.](https://stateful.com/blog/token-validation) Create a folder named "TokenTest" and add a JavaScript file called "index.js" to it. Add the following code to the "index.js" file:
+
+```js
+const express = require("express")
+const bodyParser = require("body-parser")
+const cookieParser = require("cookie-parser")
+const app = express()
+app.use(bodyParser.json())
+app.use(cookieParser())
+app.listen(8000)
+```
+This is the code required to start a server and accept requests. Then go to the terminal and run this command:
+```bash
+$ npm init
+```
+This command will take you through creating a "package.json" file for your node dependencies. Press Enter on all the prompts if you don't know what they do. If you don't have npm or Node installed, you can find it [here](https://nodejs.org/en/).
+
+### Setting Up Node
+
+Input the following commands to install the dependencies required in the "index.js" file:
+```javascript
+$ npm install express
+$ npm install body-parser
+$ npm install cookie-parser
+$ npm install jsonwebtoken
+```
+Now create a second JavaScript file called "handlers.js" and add the following code to this file:
+```javascript
+const jwt = require("jsonwebtoken")
+const jwtKey = "SECRET"
+const jwtExpirySeconds = 600
+const users = {
+  user1: "iamsecret1",
+  user2: "iamsecret2",
+}
+```
+Notice that there's a variable holding a key called "jwtKey." Node will use this key to build and encrypt tokens, so you should keep it in a safe place. For this example, however, that isn't necessary. Additionally, as you can see, the account credentials are on a static variable since this example doesn't require data storage.
+
+### Authentication
+
+In order to manage the authentication mechanism, you need to add three endpoints: "login," "secret," and "refresh." Add the following code to the "handlers.js" file:
+```javascript
+const login = (req, res) => {
+  const { username, password } = req.body
+  if (!username || !password || users\[username\] !== password) {
+    return res.status(401).end()
+  }
+  const token = jwt.sign({ username }, jwtKey, {
+    algorithm: "HS256",
+    expiresIn: jwtExpirySeconds,
+  })
+  console.log("token:", token)
+  res.cookie("token", token, { maxAge: jwtExpirySeconds \* 1000 })
+  res.end()
+}
+const secret = (req, res) => {
+  const token = req.cookies.token
+  if (!token) {
+    return res.status(401).end()
+  }
+  var payload = null;
+  try {
+    payload = jwt.verify(token, jwtKey)
+  } catch (e) {
+    if (e instanceof jwt.JsonWebTokenError) {
+      return res.status(401).end()
+    }
+    return res.status(400).end()
+  }
+  res.send('Welcome ${payload.username}!')
+}
+const refresh = (req, res) => {
+  const token = req.cookies.token
+  if (!token) {
+    return res.status(401).end()
+  }
+  var payload = null;
+  try {
+    payload = jwt.verify(token, jwtKey)
+  } catch (e) {
+    if (e instanceof jwt.JsonWebTokenError) {
+      return res.status(401).end()
+    }
+    return res.status(400).end()
+  }
+  const nowUnixSeconds = Math.round(Number(new Date()) / 1000)
+  if (payload.exp - nowUnixSeconds > 30) {
+    return res.status(400).end()
+  }
+  const newToken = jwt.sign({ username: payload.username }, jwtKey, {
+    algorithm: "HS256",
+    expiresIn: jwtExpirySeconds,
+  })
+  res.cookie("token", newToken, { maxAge: jwtExpirySeconds \* 1000 })
+  res.end()
+}
+module.exports = {
+  login,
+  secret,
+  refresh,
+}
+```
+The "login" endpoint is where credential validation happens. This is the initial stage of the authentication flow. It works by accepting a basic login request and confirming the validity of the credentials. It then creates a token using the username and the secret key. Lastly, it saves the token in the session cookies. The "secret" endpoint represents our consumable resource and checks for the token in the session cookies. This serves as both an authentication and authorization control for the API. Finally, the "refresh" endpoint provides the mechanism to refresh the session token and keep the session alive.
+
+### Running the Code
+
+Change the "index.js" to the following:
+```javascript
+const express = require("express")
+const bodyParser = require("body-parser")
+const cookieParser = require("cookie-parser")
+const app = express()
+app.use(bodyParser.json())
+app.use(cookieParser())
+const { login, secret, refresh } = require("./handlers")
+app.post("/login", login)
+app.get("/secret", secret)
+app.post("/refresh", refresh)
+app.listen(8000)
+```
+Great. All the elements are in position. Now run the code with this command:
+```bash
+$ node ./index.js
+```
+Token Refresh Test
+------------------
+
+To [test your app](https://www.testim.io/blog/ui-testing/), all you need is a tool to send requests to the server. Something like [Postman](https://www.postman.com/) will do the job. To use it, just create a POST request to the URL ```http://localhost:8000/login``` and add the following payload:
+```
+{"username":"user1","password":"password1"}
+```
+These are your credentials. Now click Send and check the application log. To access the protected resource, simply send a GET request to the URL ```http://localhost:8000/secret```. Lastly, call the refresh endpoint with a ```POST``` to the URL ```http://localhost:8000/refresh``` to refresh your access token.
+
+What's Next?
+------------
+
+Keeping tabs on all the vulnerabilities and hacks that pose a threat to your system can be a daunting task even for the most experienced security engineers. Staying updated and relevant in this day and age has never been more challenging. Nowhere is this truer than in the world of systems security and authorization. When it comes to building a robust and [secure authentication](https://www.blinkops.com/blog/how-we-implemented-authentication-and-access-control-at-blink) and authorization mechanism for your clients, resilience and reliability are always a priority. However, this can come at the cost of convenience for the end user. This situation can be a non-starter for your platform, depending on your target user base, the authentication dynamic, and the data's sensitivity. 
+
+_This post was written by Juan Reyes._ [_Juan_](https://www.ajourneyforwisdom.com/) _is an engineer by profession and a dreamer by heart who crossed the seas to reach Japan following the promise of opportunity and challenge. While trying to find himself and build a meaningful life in the east, Juan borrows wisdom from his experiences as an entrepreneur, artist, hustler, father figure, husband, and friend to start writing about passion, meaning, self-development, leadership, relationships, and mental health. His many years of struggle and self-discovery have inspired him and drive to embark on a journey for wisdom._

@@ -204,4 +204,8 @@
 		<loc>https://hit-subscribe.netlify.app/posts/ja/feb-24</loc>
 		<lastmod>2025-03-31</lastmod>
 	</url>
+		<url>
+		<loc>https://hit-subscribe.netlify.app/posts/token-refresh</loc>
+		<lastmod>2025-05-23</lastmod>
+	</url>
 </urlset>
